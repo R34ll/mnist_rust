@@ -1,0 +1,15 @@
+[package]
+name = "user"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# ndarray = "0.15.6"
+# nnlib = {path="../nnlib"}
+
+# [profile.release]
+# rustflags=["-C","target-cpu=native"]
+
+
