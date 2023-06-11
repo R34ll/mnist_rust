@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use crate::matrix::Matrix;
 
-struct LayerGrads{
+pub struct LayerGrads{
     weight_grads:Matrix,
     inputs_grad:Matrix,
 

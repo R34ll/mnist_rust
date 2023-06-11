@@ -3,8 +3,8 @@ use std::fmt::Write;
 
 #[derive(PartialEq,Clone)]
 pub struct Matrix{
-    rows:usize,
-    cols:usize,
+    pub rows:usize,
+    pub(crate) cols:usize,
     data:Vec<f32>
 }
 
@@ -55,6 +55,14 @@ impl Matrix{
     
     pub fn data(&self)->Vec<f32>{
         self.data.clone()
+    }
+
+    pub fn get(&self, row:usize,col:usize)->f32{
+        self.data[row * self.cols + col]
+    }
+
+    pub fn set(&mut self, row:usize,col:usize,value:f32){
+        self.data[row*self.cols+col] = value
     }
 
     pub fn iter(&self) -> std::slice::Iter<f32>{

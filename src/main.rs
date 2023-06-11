@@ -2,18 +2,18 @@
 
 mod dataset;
 mod activation;
-mod nll;
 mod layer;
 mod matrix;
+mod nll;
+mod loss;
+
 
 use dataset::{load_dataset,load_label, data_batch};
 use layer::Layer;
-
-
 use matrix::Matrix;
-use nll::NLL;
 use activation::LeakyReLU;
-
+use nll::NLL;
+use loss::CrossEntropyLoss;
 
 const INPUT_SIZE:u32 = 28*28; // 784
 const OUTPUT_SIZE:u32 = 10;
@@ -38,17 +38,34 @@ fn main() {
 
 
 
-    let mut test = Matrix::new((2,2),&[4.,-5.,9.,-8.]);
-    let mut layer1 = Layer::new(2, 2);
-    let mut rl = LeakyReLU::new();
+    let mut loss_fn = CrossEntropyLoss::new();
 
-    let o1 = layer1.forward(test);
-    let o2 = rl.forward(o1);
-
-    println!("{:?}",rl.backward(o2));
+    // let data = Matrix::new((3,4),&[0.1000, 0.4000, 0.2000, 0.3000, 0.7000, 0.1000, 0.0500, 0.1500, 0.2000,
+    // 0.2000, 0.4000, 0.2000]);
 
 
+    let data = Matrix::new((3,1),&[2.,0.0,1.0]);
 
+    let labels = Matrix::new((1,3), &[2.0,0.0,1.0]);
+
+    let loss = loss_fn.forward(&data, &labels);
+    
+    println!(">> {:?}",loss);
+    
+
+
+    // println!("{:?}",loss.loss.iter().sum::<f32>());
+
+
+
+    // // Perform the forward pass
+    // network.forward(&input, &target);
+
+    // // Print the output and loss
+    // println!("Rust Output:");
+    // println!("{:?}", network.input_grads);
+    // println!("Rust Loss:");
+    // println!("{:?}", network.loss.data());
 
 
 
