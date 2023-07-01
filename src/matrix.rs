@@ -1,4 +1,19 @@
-use std::fmt::Write;
+#![allow(dead_code,unused_variables,unused_imports,unused_macros)]
+use std::{fmt::Write, ops::{Sub, Div, Mul}, process::exit};
+
+// #[macro_export]
+pub mod matrix{
+    macro_rules! matrix{
+        ($($elem:expr),*) => {
+            {
+                let mut data: Vec<Vec<f32>> = Vec::new();
+                $(data.push($elem.to_vec());)*
+                Matrix::new((data.len(),data[0].len()),data.concat().as_slice())
+            }
+        };
+    }
+    pub(crate) use matrix;
+}
 
 
 #[derive(PartialEq,Clone)]
@@ -7,7 +22,6 @@ pub struct Matrix{
     pub(crate) cols:usize,
     data:Vec<f32>
 }
-
 
 impl Matrix{
 
@@ -27,7 +41,7 @@ impl Matrix{
     /// ```
     #[inline]
     pub fn new(shape:(usize,usize), data:&[f32])->Self{
-        assert_eq!(shape.0*shape.1, data.len(), "Shape don't match.");
+        assert_eq!(shape.0*shape.1, data.len(), "Shape don't match with data size.");
         Self{
             rows:shape.0,
             cols:shape.1,
@@ -39,11 +53,16 @@ impl Matrix{
         Self { rows: shape.0, cols: shape.1, data: vec![0.0;shape.0*shape.1] }
     }
 
+
     #[inline]
     pub fn new_ones(shape:(usize,usize))->Self{
         Self { rows: shape.0, cols: shape.1, data: vec![1.0;shape.0*shape.1] }
-
     }
+
+    pub fn new_from(shape:(usize,usize), num:f32)->Self{
+        Self { rows: shape.0, cols: shape.1, data: vec![num;shape.0*shape.1] }
+    }
+
     #[inline]
     pub fn shape(&self)->(usize,usize){
         (self.rows,self.cols)
@@ -55,6 +74,15 @@ impl Matrix{
     
     pub fn data(&self)->Vec<f32>{
         self.data.clone()
+    }
+
+    pub fn get_row(&self, row:usize)->Matrix{
+        let start = row * self.shape().1;
+        let end = start + self.shape().1;
+        let row_data = &self.data[start..end];
+    
+
+        Matrix::new((1,self.cols),row_data)
     }
 
     pub fn get(&self, row:usize,col:usize)->f32{
@@ -74,7 +102,7 @@ impl Matrix{
     /// # Returns
     ///
     /// A new matrix with the number of rows equal to the original number of columns,
-    /// and the number of columns equal to the original number of rows. The data is a
+    /// and the number of columns equal to the original number of rows. The data is a   
     /// separate copy of the original matrix data.
     ///
     /// # Example
@@ -100,10 +128,12 @@ impl Matrix{
         }
     }
 
+    /// Dot operation
     pub fn dot(&self, other: &Matrix) -> Matrix {
-        assert_eq!(self.cols, other.rows,"Incompatible shapes for dot operation");
+        assert_eq!(self.cols, other.rows,"Incompatible shapes for dot operation. A={:?} and B={:?}",self.shape(),other.shape());
 
         let mut result = Matrix::new_zeros((self.rows, other.cols));
+
     
         for i in 0..self.rows {
             for j in 0..other.cols {
@@ -116,6 +146,120 @@ impl Matrix{
         }
     
         result
+    }
+
+
+    /// Multiply element-wise
+    pub fn multiply(&self,other:&Matrix)->Matrix{
+        assert!(self.shape() == other.shape(),"Incopatibles shapes for multiply operation: {:?} x {:?}",self.shape(),other.shape());
+        let mut new = other.clone();
+
+        for (idx,(row_s,row_o)) in self.iter().zip(other.iter()).enumerate(){
+            new.data[idx] = row_s*row_o;
+        }
+
+
+        new
+
+    }
+
+    /// Mean 
+    /// Compute the aritimetic mean along the specified axis.
+    /// The arithmetic mean is the sum of the elements along the axis divided by the number of elements.
+    pub fn mean(&self)->f32{
+        // self.iter().sum::<f32>()/self.len() as f32
+        self.sum()/self.len() as f32
+
+    }
+
+    pub fn scale(&self,input:f32)->Matrix{
+        let tmp:Vec<f32> = self.iter().map(|x| x * input).collect();
+        Matrix::new(self.shape(), tmp.as_slice())
+    }
+
+    pub fn exp(&self)->Matrix{
+        let tmp:Vec<f32> = self.data.iter().map(|n| n.exp()).collect();
+        Matrix::new(self.shape(), tmp.as_slice())
+    }
+
+    pub fn sum(&self)->f32{
+        self.iter().sum::<f32>()
+    }
+    
+
+    /// Return the highter number find
+    pub fn max(&self)->f32{
+        self.iter().fold(std::f32::NEG_INFINITY,|max,&x| max.max(x))
+    }
+
+    /// Return the index of the highter number.
+    pub fn max_index(&self)->usize{
+        let (max_index, _) = self.iter().enumerate().max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap();
+        max_index
+    }
+
+    /// Compares and returns the maximum of two values.
+    pub fn max_cmp(&self, n:f32)->f32{
+        self.iter().fold(0f32,|max,&x| max.max(x))
+    }
+
+}
+
+
+
+impl Sub for Matrix{
+    type Output = Matrix;
+    fn sub(self, rhs: Self) -> Self::Output {
+        assert!(self.shape() == rhs.shape(),"Incopatibles shapes for multiply operation: {:?} x {:?}",self.shape(),rhs.shape());
+        let mut new = rhs.clone();
+        
+        for (idx,(row_s,row_o)) in self.iter().zip(rhs.iter()).enumerate(){
+            new.data[idx] = row_s-row_o;
+        }
+        new
+    }
+}
+impl Div for Matrix{
+    type Output = Matrix;
+    fn div(self, rhs: Self) -> Self::Output {
+        assert!(self.shape() == rhs.shape(),"Incopatibles shapes for multiply operation: {:?} x {:?}",self.shape(),rhs.shape());
+        let mut new = rhs.clone();
+        
+        for (idx,(row_s,row_o)) in self.iter().zip(rhs.iter()).enumerate(){
+            new.data[idx] = row_s/row_o;
+        }
+        new
+    }
+}
+
+impl Div<f32> for Matrix{
+    type Output = Matrix;
+    fn div(self, rhs: f32) -> Self::Output {
+        let tmp:Vec<f32> = self.iter().map(|v| v/rhs).collect();
+        Matrix::new(self.shape(), tmp.as_slice())
+    }
+}
+
+impl Mul for Matrix{
+    type Output = Matrix;
+    fn mul(self, rhs: Self) -> Self::Output {
+        self.multiply(&rhs)
+    }
+}
+
+impl Mul<f32> for Matrix{
+    type Output = Matrix;
+    fn mul(self, rhs: f32) -> Self::Output {
+        let tmp:Vec<f32> = self.iter().map(|v| v*rhs).collect();
+        Matrix::new(self.shape(), tmp.as_slice())
+    }
+}
+
+impl Sub<f32> for Matrix{
+    type Output = Matrix;
+    fn sub(self, rhs: f32) -> Self::Output {
+        let tmp:Vec<f32> = self.iter().map(|v| v-rhs).collect();
+        Matrix::new(self.shape(), tmp.as_slice())
     }
 }
 

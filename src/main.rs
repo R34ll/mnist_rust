@@ -1,138 +1,96 @@
-// use nnlib::{, activations};
+use std::process::exit;
 
 mod dataset;
 mod activation;
 mod layer;
 mod matrix;
-mod nll;
 mod loss;
 
 
-use dataset::{load_dataset,load_label, data_batch};
-use layer::Layer;
-use matrix::Matrix;
-use activation::LeakyReLU;
-use nll::NLL;
-use loss::CrossEntropyLoss;
+#[macro_use]
+use matrix::{*,matrix::matrix};
 
-const INPUT_SIZE:u32 = 28*28; // 784
-const OUTPUT_SIZE:u32 = 10;
-const BATCH_SIZE:usize = 32;
-const EPOCHS:u32 = 25;
+use dataset::{load_dataset,load_label, one_hot_encode};
+use layer::Layer;
+
+use loss::CrossEntropyLoss;
+use crate::activation::{Softmax, LeakyReLU};
+
+
+
+const INPUT_SIZE:usize = 28*28; // 784
+const OUTPUT_SIZE:usize = 10;
+// const BATCH_SIZE:usize = 32;
+const EPOCHS:u32 = 32;
 
 fn main() {
-    // let path_dataset = "data/train-images-idx3-ubyte";
-    // let path_label = "data/train-labels-idx1-ubyte";
-    // let label = load_label(path_label);
-    // let dataframe = load_dataset(path_dataset);
+    let labels_: Vec<f32> = load_label("data/train-labels-idx1-ubyte");
+    let labels = one_hot_encode(&labels_, OUTPUT_SIZE);
+    let dataframe: Matrix = load_dataset("data/train-images-idx3-ubyte");
 
-
-    // let batch:Vec<_> = dataframe // Vec<Matrix>
-    // .chunks(28*28)
-    // .take(60000)
-    // .map(|v|v.to_vec())
-    // .collect();
-
-    let data_ = (0..INPUT_SIZE).map(|z| z as f32).collect::<Vec<f32>>();
-    let data =  Matrix::new((28,28), &data_);
+    let mut layer1 = Layer::new(INPUT_SIZE, 100);
+    let mut act = Softmax::new(); // Softmax is returning inf
+    let mut layer2 = Layer::new(100,OUTPUT_SIZE);
+    let mut loss = CrossEntropyLoss::new();
 
 
 
-    let mut loss_fn = CrossEntropyLoss::new();
 
-    // let data = Matrix::new((3,4),&[0.1000, 0.4000, 0.2000, 0.3000, 0.7000, 0.1000, 0.0500, 0.1500, 0.2000,
-    // 0.2000, 0.4000, 0.2000]);
+    // Training
+    println!("Initializing training...");
+    for epoch in 1..EPOCHS{
+
+        let mut total_loss = 0.0;
+
+        for idx in 0..dataframe.shape().0{
+            let xi = dataframe.get_row(idx);
+            let yi = Matrix::new((1,OUTPUT_SIZE),&labels[idx]);
+            
+
+            let output_layer_1 = layer1.forward(xi);
+            let output_act = act.forward(&output_layer_1);
+            let output_layer_2 = layer2.forward(output_act);
+
+            loss.forward(&output_layer_2, &yi);
 
 
-    let data = Matrix::new((3,1),&[2.,0.0,1.0]);
+            let grads1 = layer2.backward(loss.input_grads.clone());
+            let grads2 = act.backward(grads1.inputs_grad);
+            let grads3 = layer1.backward(grads2);
 
-    let labels = Matrix::new((1,3), &[2.0,0.0,1.0]);
+            layer1.apply_gradient(grads3.weight_grads);
+            layer2.apply_gradient(grads1.weight_grads);
 
-    let loss = loss_fn.forward(&data, &labels);
+            // println!("Epoch: {} | Idx: {} | Loss: {:?}",_epoch,idx,loss.loss);
+        
+            total_loss+=loss.loss.data()[0];
+        }
+
+        println!("Epoch: {} | Loss: {:?}",epoch,total_loss);
+    }
+
+
+
+
+    for idx in 0..15{
+        let xi = dataframe.get_row(idx);
+        let yi = Matrix::new((1,OUTPUT_SIZE),&labels[idx]);
+        
+
+        let output_layer_1 = layer1.forward(xi);
+        let output_act = act.forward(&output_layer_1);
+        let output_layer_2 = layer2.forward(output_act);
     
-    println!(">> {:?}",loss);
-    
+        println!("\nModel: {:?}\nReal:  {:?}\n
+        {:?}
+        ",output_layer_2.max_index(), yi.max_index(), output_layer_2);
 
-
-    // println!("{:?}",loss.loss.iter().sum::<f32>());
-
-
-
-    // // Perform the forward pass
-    // network.forward(&input, &target);
-
-    // // Print the output and loss
-    // println!("Rust Output:");
-    // println!("{:?}", network.input_grads);
-    // println!("Rust Loss:");
-    // println!("{:?}", network.loss.data());
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // let mut relu = ReLU::new();
-    // let mut layer2 = Layer::new(100, OUTPUT_SIZE as usize);
-
-    // let shape = dataset.shape().;
-
-    // let mut layer = Layer::new((shape[0],shape[1]));
-    // let out = layer.forward(data);
-    // println!("{:?}",out);
-
-
+    }
 
 
 
 
 }
 
-/*
-    Dataset:
-    - Mnist numbers from 0 to 9
-    - Each number we set N/255.0(turning in 0 or 1 the values)
-    - vec[ // 60.000 images
-            vec[28x28=784] // 784
-        ]
-
-
-
-    Layer:
-    - Struct:
-    -- new() Initialize the struct
-    -- dot() ndarray Matrix Multiplication
-    -- forward() Forward data thought layer weights doin'g matrix multiplication and storing inputs
-    -- backward() Use the stored inputs and gradients input to calculate the backward of the data
-
-
-
- */
 
 

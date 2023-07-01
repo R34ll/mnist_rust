@@ -1,4 +1,5 @@
 // Leaky ReLU
+#![allow(dead_code)]
 
 use crate::matrix::Matrix;
 
@@ -6,38 +7,47 @@ pub struct LeakyReLU{
     pub last_input:Matrix
 }
 
-impl LeakyReLU{
-    /// Initialize Our Leaky ReLu. Disponible methods now
+
+pub struct Softmax{
+    pub last_input:Matrix
+}
+
+
+impl Softmax{
     pub fn new()->Self{
-        Self{
-            last_input:Matrix::default()
-        }
+        Self { last_input: Matrix::default() }
     }
 
-    /// f(x) = max(x*0.01,0) = {if x < 0 return x*0.01; if x > 0 return x}
-    pub fn forward(&mut self, input:Matrix)->Matrix{
-        let shape = input.shape();
-
-        let output_: Vec<f32> = input.iter().map(|&z| if z < 0.0 { 0.01 * z } else { z }).collect();
-        let output: Matrix = Matrix::new(shape, &output_);
-        self.last_input = output.clone();
-        output
-
+    /// rescale input to range 0-1
+    /// S(Zk) = e^Zk / SUM: e^Zi
+    pub fn forward(&mut self, input: &Matrix)->Matrix{
+        let e = input.exp();
+        self.last_input = e.clone()/e.sum();
+        self.last_input.clone()
     }
 
-    // TODO: is not corret
-    pub fn backward(&mut self, grads: Matrix) -> Matrix {
-        let shape = grads.shape();
-        let mut output: Vec<f32> = Vec::with_capacity(shape.0 * shape.1);
+    pub fn backward(&mut self, grad:Matrix)->Matrix{
 
-        for (&grad, &input) in grads.iter().zip(self.last_input.iter()) {
-            let grad_output = if input < 0.0 { 0.01  *grad } else { grad };
-            output.push(grad_output);
-        }
+        // Derivate
+        let soft_out = &self.last_input;
+        let soft_grad = soft_out.clone() * grad;
 
-        Matrix::new(shape, &output)
+        let soft_sum = soft_out.sum();
+            
+        // let soft_grad_sum = soft_grad.sum();
+        // let soft_sum_squared = soft_sum * soft_sum;
+
+        let mut soft_deri = soft_grad.clone() - (soft_out.clone() * soft_grad.sum());
+
+        soft_deri = soft_deri / (soft_sum * soft_sum);
+        soft_deri
+
     }
 }
+
+
+
+
 
 
 
