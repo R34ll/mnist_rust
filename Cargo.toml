@@ -1,19 +1,17 @@
 [package]
-name = "user"
+name = "mnist_rust"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# ndarray = "0.15.6"
-# nnlib = {path="../nnlib"}
+rand = "0.8.5"
+
 
 [profile.release]
-# opt-level=3
-# rustflags = [ "-C", "opt-level=3" ]
-# rustflags=["-C","target-cpu=native"]
-
-
+opt-level=3
+lto=true
+panic="abort"
 
 

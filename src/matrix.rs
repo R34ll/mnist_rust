@@ -1,5 +1,4 @@
-#![allow(dead_code,unused_variables,unused_imports,unused_macros)]
-use std::{fmt::Write, ops::{Sub, Div, Mul}, process::exit};
+use std::ops::{Sub, Div, Mul};
 
 // #[macro_export]
 pub mod matrix{
@@ -80,8 +79,6 @@ impl Matrix{
         let start = row * self.shape().1;
         let end = start + self.shape().1;
         let row_data = &self.data[start..end];
-    
-
         Matrix::new((1,self.cols),row_data)
     }
 
@@ -96,6 +93,7 @@ impl Matrix{
     pub fn iter(&self) -> std::slice::Iter<f32>{
         self.data.iter()
     }
+
 
     /// Returns a new matrix with transposed dimensions.
     ///
@@ -157,35 +155,29 @@ impl Matrix{
         for (idx,(row_s,row_o)) in self.iter().zip(other.iter()).enumerate(){
             new.data[idx] = row_s*row_o;
         }
-
-
         new
-
     }
 
     /// Mean 
     /// Compute the aritimetic mean along the specified axis.
     /// The arithmetic mean is the sum of the elements along the axis divided by the number of elements.
     pub fn mean(&self)->f32{
-        // self.iter().sum::<f32>()/self.len() as f32
-        self.sum()/self.len() as f32
-
+        self.sum( ) /self.len() as f32
     }
 
     pub fn scale(&self,input:f32)->Matrix{
         let tmp:Vec<f32> = self.iter().map(|x| x * input).collect();
-        Matrix::new(self.shape(), tmp.as_slice())
+        Matrix::new(self.shape(), &tmp)
     }
 
     pub fn exp(&self)->Matrix{
         let tmp:Vec<f32> = self.data.iter().map(|n| n.exp()).collect();
-        Matrix::new(self.shape(), tmp.as_slice())
+        Matrix::new(self.shape(), &tmp)
     }
 
     pub fn sum(&self)->f32{
         self.iter().sum::<f32>()
     }
-    
 
     /// Return the highter number find
     pub fn max(&self)->f32{
@@ -198,21 +190,51 @@ impl Matrix{
         max_index
     }
 
-    /// Compares and returns the maximum of two values.
-    pub fn max_cmp(&self, n:f32)->f32{
-        self.iter().fold(0f32,|max,&x| max.max(x))
-    }
+    // /// Compares and returns the maximum of two values.
+    // pub fn max_cmp(&self, n:f32)->f32{
+    //     self.iter().fold(0f32,|max,&x| max.max(x))
+    // }
 
+    #[inline]
+    pub fn iter_row(&self)->RowIter{
+        RowIter{
+            matrix_:self,
+            current:0
+        }
+    }
+}
+
+pub struct RowIter<'a>{
+    matrix_: &'a Matrix,
+    current: usize
+}
+
+impl<'a> Iterator for RowIter<'a> {
+    type Item = Matrix;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current < self.matrix_.rows {
+            let row = self.matrix_.get_row(self.current);
+            self.current += 1;
+            Some(row)
+        } else {
+            None
+        }
+    }
 }
 
 
+impl Default for Matrix{
+    fn default() -> Self {
+        Self { rows: 1, cols: 1, data: vec![0.0] }
+    }
+}
 
 impl Sub for Matrix{
     type Output = Matrix;
     fn sub(self, rhs: Self) -> Self::Output {
-        assert!(self.shape() == rhs.shape(),"Incopatibles shapes for multiply operation: {:?} x {:?}",self.shape(),rhs.shape());
+        assert!(self.shape() == rhs.shape(),"Incopatibles shapes for subtraction operation: {:?} x {:?}",self.shape(),rhs.shape());
         let mut new = rhs.clone();
-        
         for (idx,(row_s,row_o)) in self.iter().zip(rhs.iter()).enumerate(){
             new.data[idx] = row_s-row_o;
         }
@@ -222,13 +244,19 @@ impl Sub for Matrix{
 impl Div for Matrix{
     type Output = Matrix;
     fn div(self, rhs: Self) -> Self::Output {
-        assert!(self.shape() == rhs.shape(),"Incopatibles shapes for multiply operation: {:?} x {:?}",self.shape(),rhs.shape());
+        assert!(self.shape() == rhs.shape(),"Incopatibles shapes for division operation: {:?} x {:?}",self.shape(),rhs.shape());
         let mut new = rhs.clone();
-        
         for (idx,(row_s,row_o)) in self.iter().zip(rhs.iter()).enumerate(){
             new.data[idx] = row_s/row_o;
         }
         new
+    }
+}
+
+impl Mul for Matrix{
+    type Output = Matrix;
+    fn mul(self, rhs: Self) -> Self::Output {
+        self.multiply(&rhs)
     }
 }
 
@@ -237,13 +265,6 @@ impl Div<f32> for Matrix{
     fn div(self, rhs: f32) -> Self::Output {
         let tmp:Vec<f32> = self.iter().map(|v| v/rhs).collect();
         Matrix::new(self.shape(), tmp.as_slice())
-    }
-}
-
-impl Mul for Matrix{
-    type Output = Matrix;
-    fn mul(self, rhs: Self) -> Self::Output {
-        self.multiply(&rhs)
     }
 }
 
@@ -263,22 +284,14 @@ impl Sub<f32> for Matrix{
     }
 }
 
-impl Default for Matrix{
-    fn default() -> Self {
-        Self { rows: 1, cols: 1, data: vec![0.0] }
-    }
-}
-
 impl std::fmt::Debug for Matrix{
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("Matrix[\n")?;
-
 
         for row in 0..self.rows {
             f.write_str(" [")?;
             for col in 0..self.cols {write!(f, " {}", self.data[row*self.cols+ col]      )?;}
             f.write_str(" ],\n")?;
-            
         }
         write!(f, "], Shape={:?}", (self.rows,self.cols))
     }
@@ -292,6 +305,16 @@ impl<'a> IntoIterator for &'a mut Matrix {
         self.data.iter_mut()
     }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

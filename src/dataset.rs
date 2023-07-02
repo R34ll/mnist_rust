@@ -6,7 +6,7 @@ use std::io::Read;
 use crate::matrix::Matrix;
 
 pub fn load_dataset(path:&str)->Matrix{
-    let mut file = File::open(path).expect("Faile don't was find");
+    let mut file = File::open(path).expect("File don't was find");
 
     let mut data = Vec::new();
     file.read_to_end(&mut data).unwrap();
@@ -36,7 +36,7 @@ pub fn load_dataset(path:&str)->Matrix{
 }
 
 pub fn load_label(path:&str)->Vec<f32>{
-    let mut file = File::open(path).expect("Faile don't was find");
+    let mut file = File::open(path).expect("File don't was find");
 
     let mut data = Vec::new();
     file.read_to_end(&mut data).unwrap();
@@ -77,118 +77,14 @@ pub fn one_hot_encode(labels: &[f32], num_classes: usize) -> Vec<Vec<f32>> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ###################################################################################################################
-
-// use ndarray::{arr2, Array2, Axis, Array1, ArrayView, Ix2};
-
-// use std::fs::{read, File};
-// use std::io::{self,Read};
-
-
-
-// pub fn load_dataset(path:&str)->Array2<u8>{
-
-//     let mut file = File::open(path).expect("Faile don't was find");
-
-//     let mut data = Vec::new();
-//     file.read_to_end(&mut data).unwrap();
-
-//     // let data:Vec<u8> = data.iter_mut().map(|&mut px| px/255 ).collect(); // Normalization
-
-//     let num_rows = 60000;
-//     let num_cols = 784;
-
-//     let mut dataset_:Vec<Vec<u8>> = data
-//         .chunks(784)
-//         .map(|chunk| chunk.to_vec())
-//         .collect();
-//     dataset_.pop();
-
-
-
-//     let dataset = Array2::from_shape_vec((num_rows, num_cols), dataset_.into_iter().flatten().collect()).unwrap();
-
-
-
-//     dataset
-// }
-
-// pub fn load_label(path:&str)->Array2<u8>{
-//     let mut file = File::open(path).expect("Faile don't was find");
-
-//     let mut data = Vec::new();
-//     file.read_to_end(&mut data).unwrap();
-//     data.truncate(data.len()-8);
-
-
-//     let labels = Array2::<u8>::from_shape_vec((60000,1), data);
-
-//     labels.unwrap()
-
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+pub fn one_hot_encode_matrix(labels: &[f32], num_classes: usize) -> Vec<Matrix> {
+    let mut new:Vec<Matrix> = Vec::new();
+    for mut label in labels.into_iter(){
+        let mut new_label = vec![0.0;num_classes];
+        if *label >= num_classes as f32{label = &1.0;}
+        new_label[*label as usize] = 1.0;
+        let a = Matrix::new((1,num_classes), new_label.as_slice());
+        new.append(&mut vec![a]);
+    }
+    new
+}
