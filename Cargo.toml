@@ -10,8 +10,8 @@ rand = "0.8.5"
 
 
 [profile.release]
-opt-level=3
-lto=true
-panic="abort"
+opt-level = 3
+lto = true
+panic = "abort"
 
 

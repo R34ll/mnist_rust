@@ -1,7 +1,7 @@
-use std::ops::{Sub, Div, Mul};
+use std::ops::{Div, Mul, Sub};
 
-// #[macro_export]
-pub mod matrix{
+pub mod macros {
+    #[macro_export]
     macro_rules! matrix{
         ($($elem:expr),*) => {
             {
@@ -14,16 +14,14 @@ pub mod matrix{
     pub(crate) use matrix;
 }
 
-
-#[derive(PartialEq,Clone)]
-pub struct Matrix{
-    pub rows:usize,
-    pub(crate) cols:usize,
-    data:Vec<f32>
+#[derive(PartialEq, Clone)]
+pub struct Matrix {
+    pub rows: usize,
+    pub(crate) cols: usize,
+    data: Vec<f32>,
 }
 
-impl Matrix{
-
+impl Matrix {
     /// Creates a new matrix with the specified number of rows and columns.
     ///
     /// # Arguments
@@ -39,61 +37,75 @@ impl Matrix{
     ///                                   5.0,6.0]);
     /// ```
     #[inline]
-    pub fn new(shape:(usize,usize), data:&[f32])->Self{
-        assert_eq!(shape.0*shape.1, data.len(), "Shape don't match with data size.");
-        Self{
-            rows:shape.0,
-            cols:shape.1,
-            data:data.to_vec(),
+    pub fn new(shape: (usize, usize), data: &[f32]) -> Self {
+        assert_eq!(
+            shape.0 * shape.1,
+            data.len(),
+            "Shape don't match with data size."
+        );
+        Self {
+            rows: shape.0,
+            cols: shape.1,
+            data: data.to_vec(),
         }
     }
     #[inline]
-    pub fn new_zeros(shape:(usize,usize))->Self{
-        Self { rows: shape.0, cols: shape.1, data: vec![0.0;shape.0*shape.1] }
-    }
-
-
-    #[inline]
-    pub fn new_ones(shape:(usize,usize))->Self{
-        Self { rows: shape.0, cols: shape.1, data: vec![1.0;shape.0*shape.1] }
-    }
-
-    pub fn new_from(shape:(usize,usize), num:f32)->Self{
-        Self { rows: shape.0, cols: shape.1, data: vec![num;shape.0*shape.1] }
+    pub fn new_zeros(shape: (usize, usize)) -> Self {
+        Self {
+            rows: shape.0,
+            cols: shape.1,
+            data: vec![0.0; shape.0 * shape.1],
+        }
     }
 
     #[inline]
-    pub fn shape(&self)->(usize,usize){
-        (self.rows,self.cols)
+    pub fn new_ones(shape: (usize, usize)) -> Self {
+        Self {
+            rows: shape.0,
+            cols: shape.1,
+            data: vec![1.0; shape.0 * shape.1],
+        }
+    }
+
+    pub fn new_from(shape: (usize, usize), num: f32) -> Self {
+        Self {
+            rows: shape.0,
+            cols: shape.1,
+            data: vec![num; shape.0 * shape.1],
+        }
+    }
+
+    #[inline]
+    pub fn shape(&self) -> (usize, usize) {
+        (self.rows, self.cols)
     }
     #[inline]
-    pub fn len(&self)->usize{
+    pub fn len(&self) -> usize {
         self.data.len()
     }
-    
-    pub fn data(&self)->Vec<f32>{
+
+    pub fn data(&self) -> Vec<f32> {
         self.data.clone()
     }
 
-    pub fn get_row(&self, row:usize)->Matrix{
+    pub fn get_row(&self, row: usize) -> Matrix {
         let start = row * self.shape().1;
         let end = start + self.shape().1;
         let row_data = &self.data[start..end];
-        Matrix::new((1,self.cols),row_data)
+        Matrix::new((1, self.cols), row_data)
     }
 
-    pub fn get(&self, row:usize,col:usize)->f32{
+    pub fn get(&self, row: usize, col: usize) -> f32 {
         self.data[row * self.cols + col]
     }
 
-    pub fn set(&mut self, row:usize,col:usize,value:f32){
-        self.data[row*self.cols+col] = value
+    pub fn set(&mut self, row: usize, col: usize, value: f32) {
+        self.data[row * self.cols + col] = value
     }
 
-    pub fn iter(&self) -> std::slice::Iter<f32>{
+    pub fn iter(&self) -> std::slice::Iter<f32> {
         self.data.iter()
     }
-
 
     /// Returns a new matrix with transposed dimensions.
     ///
@@ -109,7 +121,7 @@ impl Matrix{
     /// let matrix = Matrix::new(3, 4);
     /// let transposed = matrix.new_transpose();
     /// ```
-    pub fn transpose(&self)->Self{
+    pub fn transpose(&self) -> Self {
         let mut transposed_data = vec![0.0; self.rows * self.cols];
 
         for i in 0..self.rows {
@@ -128,11 +140,16 @@ impl Matrix{
 
     /// Dot operation
     pub fn dot(&self, other: &Matrix) -> Matrix {
-        assert_eq!(self.cols, other.rows,"Incompatible shapes for dot operation. A={:?} and B={:?}",self.shape(),other.shape());
+        assert_eq!(
+            self.cols,
+            other.rows,
+            "Incompatible shapes for dot operation. A={:?} and B={:?}",
+            self.shape(),
+            other.shape()
+        );
 
         let mut result = Matrix::new_zeros((self.rows, other.cols));
 
-    
         for i in 0..self.rows {
             for j in 0..other.cols {
                 let mut sum = 0.0;
@@ -142,51 +159,60 @@ impl Matrix{
                 result.data[i * result.cols + j] = sum;
             }
         }
-    
+
         result
     }
 
-
     /// Multiply element-wise
-    pub fn multiply(&self,other:&Matrix)->Matrix{
-        assert!(self.shape() == other.shape(),"Incopatibles shapes for multiply operation: {:?} x {:?}",self.shape(),other.shape());
+    pub fn multiply(&self, other: &Matrix) -> Matrix {
+        assert!(
+            self.shape() == other.shape(),
+            "Incopatibles shapes for multiply operation: {:?} x {:?}",
+            self.shape(),
+            other.shape()
+        );
         let mut new = other.clone();
 
-        for (idx,(row_s,row_o)) in self.iter().zip(other.iter()).enumerate(){
-            new.data[idx] = row_s*row_o;
+        for (idx, (row_s, row_o)) in self.iter().zip(other.iter()).enumerate() {
+            new.data[idx] = row_s * row_o;
         }
         new
     }
 
-    /// Mean 
+    /// Mean
     /// Compute the aritimetic mean along the specified axis.
     /// The arithmetic mean is the sum of the elements along the axis divided by the number of elements.
-    pub fn mean(&self)->f32{
-        self.sum( ) /self.len() as f32
+    pub fn mean(&self) -> f32 {
+        self.sum() / self.len() as f32
     }
 
-    pub fn scale(&self,input:f32)->Matrix{
-        let tmp:Vec<f32> = self.iter().map(|x| x * input).collect();
+    pub fn scale(&self, input: f32) -> Matrix {
+        let tmp: Vec<f32> = self.iter().map(|x| x * input).collect();
         Matrix::new(self.shape(), &tmp)
     }
 
-    pub fn exp(&self)->Matrix{
-        let tmp:Vec<f32> = self.data.iter().map(|n| n.exp()).collect();
+    pub fn exp(&self) -> Matrix {
+        let tmp: Vec<f32> = self.data.iter().map(|n| n.exp()).collect();
         Matrix::new(self.shape(), &tmp)
     }
 
-    pub fn sum(&self)->f32{
+    pub fn sum(&self) -> f32 {
         self.iter().sum::<f32>()
     }
 
     /// Return the highter number find
-    pub fn max(&self)->f32{
-        self.iter().fold(std::f32::NEG_INFINITY,|max,&x| max.max(x))
+    pub fn max(&self) -> f32 {
+        self.iter()
+            .fold(std::f32::NEG_INFINITY, |max, &x| max.max(x))
     }
 
     /// Return the index of the highter number.
-    pub fn max_index(&self)->usize{
-        let (max_index, _) = self.iter().enumerate().max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap();
+    pub fn max_index(&self) -> usize {
+        let (max_index, _) = self
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .unwrap();
         max_index
     }
 
@@ -196,17 +222,17 @@ impl Matrix{
     // }
 
     #[inline]
-    pub fn iter_row(&self)->RowIter{
-        RowIter{
-            matrix_:self,
-            current:0
+    pub fn iter_row(&self) -> RowIter {
+        RowIter {
+            matrix_: self,
+            current: 0,
         }
     }
 }
 
-pub struct RowIter<'a>{
+pub struct RowIter<'a> {
     matrix_: &'a Matrix,
-    current: usize
+    current: usize,
 }
 
 impl<'a> Iterator for RowIter<'a> {
@@ -223,79 +249,94 @@ impl<'a> Iterator for RowIter<'a> {
     }
 }
 
-
-impl Default for Matrix{
+impl Default for Matrix {
     fn default() -> Self {
-        Self { rows: 1, cols: 1, data: vec![0.0] }
+        Self {
+            rows: 1,
+            cols: 1,
+            data: vec![0.0],
+        }
     }
 }
 
-impl Sub for Matrix{
+impl Sub for Matrix {
     type Output = Matrix;
     fn sub(self, rhs: Self) -> Self::Output {
-        assert!(self.shape() == rhs.shape(),"Incopatibles shapes for subtraction operation: {:?} x {:?}",self.shape(),rhs.shape());
+        assert!(
+            self.shape() == rhs.shape(),
+            "Incopatibles shapes for subtraction operation: {:?} x {:?}",
+            self.shape(),
+            rhs.shape()
+        );
         let mut new = rhs.clone();
-        for (idx,(row_s,row_o)) in self.iter().zip(rhs.iter()).enumerate(){
-            new.data[idx] = row_s-row_o;
+        for (idx, (row_s, row_o)) in self.iter().zip(rhs.iter()).enumerate() {
+            new.data[idx] = row_s - row_o;
         }
         new
     }
 }
-impl Div for Matrix{
+impl Div for Matrix {
     type Output = Matrix;
     fn div(self, rhs: Self) -> Self::Output {
-        assert!(self.shape() == rhs.shape(),"Incopatibles shapes for division operation: {:?} x {:?}",self.shape(),rhs.shape());
+        assert!(
+            self.shape() == rhs.shape(),
+            "Incopatibles shapes for division operation: {:?} x {:?}",
+            self.shape(),
+            rhs.shape()
+        );
         let mut new = rhs.clone();
-        for (idx,(row_s,row_o)) in self.iter().zip(rhs.iter()).enumerate(){
-            new.data[idx] = row_s/row_o;
+        for (idx, (row_s, row_o)) in self.iter().zip(rhs.iter()).enumerate() {
+            new.data[idx] = row_s / row_o;
         }
         new
     }
 }
 
-impl Mul for Matrix{
+impl Mul for Matrix {
     type Output = Matrix;
     fn mul(self, rhs: Self) -> Self::Output {
         self.multiply(&rhs)
     }
 }
 
-impl Div<f32> for Matrix{
+impl Div<f32> for Matrix {
     type Output = Matrix;
     fn div(self, rhs: f32) -> Self::Output {
-        let tmp:Vec<f32> = self.iter().map(|v| v/rhs).collect();
+        let tmp: Vec<f32> = self.iter().map(|v| v / rhs).collect();
         Matrix::new(self.shape(), tmp.as_slice())
     }
 }
 
-impl Mul<f32> for Matrix{
+impl Mul<f32> for Matrix {
     type Output = Matrix;
     fn mul(self, rhs: f32) -> Self::Output {
-        let tmp:Vec<f32> = self.iter().map(|v| v*rhs).collect();
+        let tmp: Vec<f32> = self.iter().map(|v| v * rhs).collect();
         Matrix::new(self.shape(), tmp.as_slice())
     }
 }
 
-impl Sub<f32> for Matrix{
+impl Sub<f32> for Matrix {
     type Output = Matrix;
     fn sub(self, rhs: f32) -> Self::Output {
-        let tmp:Vec<f32> = self.iter().map(|v| v-rhs).collect();
+        let tmp: Vec<f32> = self.iter().map(|v| v - rhs).collect();
         Matrix::new(self.shape(), tmp.as_slice())
     }
 }
 
-impl std::fmt::Debug for Matrix{
+impl std::fmt::Debug for Matrix {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("Matrix[\n")?;
 
         for row in 0..self.rows {
             f.write_str(" [")?;
-            for col in 0..self.cols {write!(f, " {}", self.data[row*self.cols+ col]      )?;}
+            for col in 0..self.cols {
+                write!(f, " {}", self.data[row * self.cols + col])?;
+            }
             f.write_str(" ],\n")?;
         }
-        write!(f, "], Shape={:?}", (self.rows,self.cols))
+        write!(f, "], Shape={:?}", (self.rows, self.cols))
     }
-} 
+}
 
 impl<'a> IntoIterator for &'a mut Matrix {
     type Item = &'a mut f32;
@@ -306,35 +347,25 @@ impl<'a> IntoIterator for &'a mut Matrix {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 #[cfg(test)]
-mod matrix_math{
+mod matrix_math {
     use super::Matrix;
 
     #[test]
-    pub fn dot_operation(){
-        let a = Matrix::new((4,2),&[1.,2.,3.,4.,5.,6.,7.,8.]);
+    pub fn dot_operation() {
+        let a = Matrix::new((4, 2), &[1., 2., 3., 4., 5., 6., 7., 8.]);
         let b = a.clone().transpose();
 
         assert_eq!(
             a.dot(&b),
-            Matrix{
-                rows:4,cols:4,
-                data: vec![5.,  11.,  17.,  23.,  11.,  25.,  39.,  53.,  17.,  39.,  61.,  83.,  23.,53.,  83., 113.]
+            Matrix {
+                rows: 4,
+                cols: 4,
+                data: vec![
+                    5., 11., 17., 23., 11., 25., 39., 53., 17., 39., 61., 83., 23., 53., 83., 113.
+                ]
             }
         )
-
     }
 
     #[test]
@@ -369,19 +400,23 @@ mod matrix_math{
         assert_eq!(result.shape(), expected.shape());
         assert_eq!(result.data(), expected.data());
     }
-
-
 }
 
 #[cfg(test)]
-mod matrix_test{
+mod matrix_test {
     use super::Matrix;
 
-
     #[test]
-    pub fn transpose(){
-        let a = Matrix::new((2,4),&[1.,2.,3.,4.,5.,6.,7.,8.]);
-        assert_eq!(a.transpose(), Matrix{rows:4,cols:2, data:vec![1., 5., 2., 6., 3., 7., 4., 8.]})
+    pub fn transpose() {
+        let a = Matrix::new((2, 4), &[1., 2., 3., 4., 5., 6., 7., 8.]);
+        assert_eq!(
+            a.transpose(),
+            Matrix {
+                rows: 4,
+                cols: 2,
+                data: vec![1., 5., 2., 6., 3., 7., 4., 8.]
+            }
+        )
     }
 
     #[test]
@@ -394,23 +429,18 @@ mod matrix_test{
         assert_eq!(result.data(), expected.data());
     }
 
-
     #[test]
-    pub fn initialization(){
-        let v = (0..4*5).map(|z| z as f32).collect::<Vec<f32>>();
-        let data = Matrix::new((4,5), &v);
-    
+    pub fn initialization() {
+        let v = (0..4 * 5).map(|z| z as f32).collect::<Vec<f32>>();
+        let data = Matrix::new((4, 5), &v);
+
         assert_eq!(
             data,
-            Matrix{
-                rows:4,
-                cols:5,
-                data:v
+            Matrix {
+                rows: 4,
+                cols: 5,
+                data: v
             }
         );
-    
     }
-
 }
-
-
