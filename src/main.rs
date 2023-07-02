@@ -15,7 +15,7 @@ use activation::Softmax;
 const INPUT_SIZE:usize = 28*28; // 784
 const OUTPUT_SIZE:usize = 10;
 // const BATCH_SIZE:usize = 32;
-const EPOCHS:u32 = 3;
+const EPOCHS:u32 = 14;
 
 fn main() {
     let labels_: Vec<f32> = load_label("data/train-labels-idx1-ubyte");
@@ -52,25 +52,10 @@ fn main() {
             total_loss+=loss.input_grads.data()[0];
         }
 
-        println!("Epoch: {} | Loss: {:?}",epoch,total_loss);
+        println!("Epoch: {} | Loss: {:?}",epoch,total_loss);    
     }
 
 
-
-    let mut corrects = 0.0;
-    for (xi,yi) in dataframe.iter_row().zip(labels.iter()){
-
-        let output_layer_1 = layer1.forward(xi);
-        let output_act = act.forward(&output_layer_1);
-        let output_layer_2 = layer2.forward(output_act);
-
-        if output_layer_2.max_index() == yi.max_index(){
-            corrects+=1.0;
-        }
-    }
-
-
-    println!("Corrects: {}/{}",corrects,labels.len());
 }
 
 

@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 
 use std::fmt::Debug;
 use rand::{
@@ -8,7 +7,6 @@ use rand::{
 
 use crate::matrix::Matrix;
 
-#[derive(Debug)]
 pub struct LayerGrads{
     pub weight_grads:Matrix,
     pub inputs_grad:Matrix,
@@ -32,7 +30,6 @@ impl Layer{
         for _ in 0..input*output{
             v_weight.push(rng.sample(between));
         }
-        println!("Limit Weight: {:?}",limit);
 
         Self{
             // weights:Matrix::new_from((input,output),0.001),
@@ -60,15 +57,6 @@ impl Layer{
         self.weights.into_iter().zip(grads.iter()).for_each(|(w,grad)| {*w -= 0.0009 * grad});
     }
 
-    #[inline]
-    pub fn shape(&self)->(usize,usize){
-        (self.input_size, self.output_size)
-    }
-
-    #[inline]
-    pub fn weights(self)->Matrix{
-        self.weights
-    }
 }
 
 
