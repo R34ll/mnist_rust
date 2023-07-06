@@ -119,7 +119,7 @@ impl Matrix {
     ///
     /// ```
     /// let matrix = Matrix::new(3, 4);
-    /// let transposed = matrix.new_transpose();
+    /// let transposed = matrix.transpose();
     /// ```
     pub fn transpose(&self) -> Self {
         let mut transposed_data = vec![0.0; self.rows * self.cols];
@@ -200,7 +200,7 @@ impl Matrix {
         self.iter().sum::<f32>()
     }
 
-    /// Return the highter number find
+    /// Return the higher number find
     pub fn max(&self) -> f32 {
         self.iter()
             .fold(std::f32::NEG_INFINITY, |max, &x| max.max(x))
@@ -216,10 +216,6 @@ impl Matrix {
         max_index
     }
 
-    // /// Compares and returns the maximum of two values.
-    // pub fn max_cmp(&self, n:f32)->f32{
-    //     self.iter().fold(0f32,|max,&x| max.max(x))
-    // }
 
     #[inline]
     pub fn iter_row(&self) -> RowIter {
